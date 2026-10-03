@@ -131,38 +131,50 @@ rather than invented as if real:
       Analytics) to `tools/layout.py` (`head()` function) if you want
       traffic data, and verify the domain in Google Search Console once
       it's live so the site gets indexed.
-- [ ] **Root-absolute paths assume the site is deployed at a domain root**
-      (e.g. `wajha.sa` or a Netlify/Vercel subdomain). See the GitHub Pages
-      note below if you're using a project subpath instead.
+- [ ] **DNS for wajhadrones.com is not configured yet.** The site is already
+      live on GitHub Pages and the repo has a `CNAME` file + GitHub-side
+      custom domain config pointing at `wajhadrones.com`, but GitHub can't
+      serve it there until you add DNS records at your registrar. See
+      "Pointing wajhadrones.com at this site" below.
 
 ## Deployment
 
-The site is plain static files, so any static host works. Three easy options:
+**Currently live** at https://aa-alghamdi.github.io/wajha-website/ via
+GitHub Pages, deployed from the `main` branch of
+https://github.com/AA-Alghamdi/wajha-website (public repo, required for
+free Pages hosting). Every internal link is generated as a relative path
+(see `tools/generate.py`'s `relativize()`), so this exact build works
+correctly under a subpath like this one, at a custom domain's true root, or
+on Netlify/Vercel — no path changes needed when you switch hosts.
 
-### Netlify (drag-and-drop, easiest)
-1. Go to [app.netlify.com/drop](https://app.netlify.com/drop).
-2. Drag the entire `wajha-website` folder onto the page.
-3. Netlify gives you a live URL immediately; add a custom domain under
-   **Site settings → Domain management** when ready.
+### Pointing wajhadrones.com at this site
 
-### Vercel
-1. Install the CLI (`npm i -g vercel`) or use the Vercel dashboard's "Add
-   New Project" → "Upload" flow.
-2. From this folder, run `vercel` and follow the prompts (no build command
-   needed, since it's static files).
+The repo already has a `CNAME` file containing `wajhadrones.com`, and
+GitHub's Pages config for this repo is already set to that custom domain.
+Once you've registered the domain, add these DNS records at your registrar
+(Namecheap, GoDaddy, Cloudflare, whichever you used):
 
-### GitHub Pages
-1. Push this folder to a GitHub repository.
-2. In **Settings → Pages**, set the source to the root of the branch you
-   pushed.
-3. **Important:** this site's internal links are root-absolute (e.g.
-   `/en/index.html`), which only works if the site is served from the
-   domain root. A GitHub Pages *project* site is served from
-   `username.github.io/repo-name/`, which would break those links. Either:
-   - name the repository `username.github.io` (served from the true root), or
-   - attach a custom domain in Pages settings (also serves from root), or
-   - ask for the generator to be adapted to relative paths if you need a
-     project-subpath deployment without a custom domain.
+| Type | Host | Value |
+|---|---|---|
+| A | @ | 185.199.108.153 |
+| A | @ | 185.199.109.153 |
+| A | @ | 185.199.110.153 |
+| A | @ | 185.199.111.153 |
+| CNAME | www | aa-alghamdi.github.io |
+
+DNS propagation usually takes a few minutes to a few hours. Once it
+resolves, GitHub auto-provisions an HTTPS certificate (Settings → Pages
+will show "DNS check successful" and an "Enforce HTTPS" checkbox) — enable
+that so the site only serves over HTTPS.
+
+### Alternative hosts (if you move off GitHub Pages later)
+
+- **Netlify**: drag the whole `wajha-website` folder onto
+  [app.netlify.com/drop](https://app.netlify.com/drop), or connect the
+  GitHub repo for git-based deploys. Add the custom domain under
+  **Site settings → Domain management**.
+- **Vercel**: `vercel` CLI from this folder, or import the GitHub repo via
+  the dashboard. No build command needed, it's static files.
 
 ## Local preview
 

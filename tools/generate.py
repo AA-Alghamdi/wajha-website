@@ -14,6 +14,7 @@ from content import SERVICES, SERVICES_ORDER, SITE  # noqa: E402
 from content_pages import PAGE_SEO  # noqa: E402
 from content_blog import BLOG_POSTS, BLOG_ORDER  # noqa: E402
 from icons import FAVICON_SVG  # noqa: E402
+from layout import BASE_URL, canonical_url_for  # noqa: E402
 import pages  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -60,35 +61,43 @@ def seo(slug: str, lang: str):
 
 def build_all():
     count = 0
+    all_slugs = []  # every indexable (lang, slug) pair, for the sitemap
     for lang in LANGS:
         title, desc = seo("index", lang)
         write(f"{lang}/index.html", pages_page(lang, "index", title, desc, pages.build_home(lang)))
+        all_slugs.append((lang, "index"))
         count += 1
 
         title, desc = seo("about", lang)
         write(f"{lang}/about.html", pages_page(lang, "about", title, desc, pages.build_about(lang)))
+        all_slugs.append((lang, "about"))
         count += 1
 
         title, desc = seo("services/index", lang)
         write(f"{lang}/services/index.html", pages_page(lang, "services/index", title, desc, pages.build_services_index(lang)))
+        all_slugs.append((lang, "services/index"))
         count += 1
 
         for slug in SERVICES_ORDER:
             page_slug = f"services/{slug}"
             title, desc = seo(page_slug, lang)
             write(f"{lang}/{page_slug}.html", pages_page(lang, page_slug, title, desc, pages.build_service_detail(lang, slug)))
+            all_slugs.append((lang, page_slug))
             count += 1
 
         title, desc = seo("technology", lang)
         write(f"{lang}/technology.html", pages_page(lang, "technology", title, desc, pages.build_technology(lang)))
+        all_slugs.append((lang, "technology"))
         count += 1
 
         title, desc = seo("projects", lang)
         write(f"{lang}/projects.html", pages_page(lang, "projects", title, desc, pages.build_projects(lang)))
+        all_slugs.append((lang, "projects"))
         count += 1
 
         title, desc = seo("blog/index", lang)
         write(f"{lang}/blog/index.html", pages_page(lang, "blog/index", title, desc, pages.build_blog_index(lang)))
+        all_slugs.append((lang, "blog/index"))
         count += 1
 
         for slug in BLOG_ORDER:
@@ -97,17 +106,65 @@ def build_all():
             write(f"{lang}/{page_slug}.html", pages_page(
                 lang, page_slug, f"{post['title']} | WAJHA" if lang == "en" else f"{post['title']} | وجهة",
                 post["excerpt"], pages.build_blog_post(lang, slug)))
+            all_slugs.append((lang, page_slug))
             count += 1
 
         title, desc = seo("contact", lang)
         write(f"{lang}/contact.html", pages_page(lang, "contact", title, desc, pages.build_contact(lang)))
+        all_slugs.append((lang, "contact"))
         count += 1
 
     write("assets/icons/favicon.svg", FAVICON_SVG)
     write("index.html", build_root_redirect())
     count += 1
 
-    print(f"Generated {count} HTML pages under en/ and ar/, plus favicon.svg and root index.html.")
+    write("sitemap.xml", build_sitemap(all_slugs))
+    write("robots.txt", build_robots())
+
+    print(f"Generated {count} HTML pages under en/ and ar/, plus favicon.svg, root index.html, sitemap.xml, and robots.txt.")
+
+
+def build_sitemap(all_slugs) -> str:
+    # One <url> entry per (lang, slug), each listing hreflang alternates to
+    # every language version of that same slug — the format Google
+    # recommends for bilingual sites. Every internal reference here is a
+    # full absolute URL (required by the sitemap spec), unlike ordinary
+    # navigation links elsewhere in the site, which stay relative.
+    slugs_seen = []
+    for _, slug in all_slugs:
+        if slug not in slugs_seen:
+            slugs_seen.append(slug)
+
+    entries = []
+    for lang, slug in all_slugs:
+        alt_links = "\n".join(
+            f'    <xhtml:link rel="alternate" hreflang="{alt_lang}" href="{canonical_url_for(alt_lang, slug)}"/>'
+            for alt_lang in LANGS
+        )
+        entries.append(
+            f"  <url>\n"
+            f"    <loc>{canonical_url_for(lang, slug)}</loc>\n"
+            f"{alt_links}\n"
+            f'    <xhtml:link rel="alternate" hreflang="x-default" href="{canonical_url_for("en", slug)}"/>\n'
+            f"  </url>"
+        )
+
+    body = "\n".join(entries)
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+        'xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
+        f"{body}\n"
+        "</urlset>\n"
+    )
+
+
+def build_robots() -> str:
+    return (
+        "User-agent: *\n"
+        "Allow: /\n\n"
+        f"Sitemap: {BASE_URL}/sitemap.xml\n"
+    )
 
 
 def pages_page(lang, slug, title, desc, body):

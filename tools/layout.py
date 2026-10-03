@@ -5,6 +5,12 @@ from icons import icon
 
 LANGS = ("en", "ar")
 
+# The site's real, registered domain. Used only for the canonical/hreflang/
+# og:url meta tags in head(), which must be full absolute URLs per spec
+# (unlike ordinary navigation links, which stay relative via generate.py's
+# relativize() so the same build keeps working under any host/subpath).
+BASE_URL = "https://wajhadrones.com"
+
 
 def other_lang(lang: str) -> str:
     return "ar" if lang == "en" else "en"
@@ -14,11 +20,15 @@ def url_for(lang: str, slug: str) -> str:
     return f"/{lang}/{slug}.html"
 
 
+def canonical_url_for(lang: str, slug: str) -> str:
+    return f"{BASE_URL}{url_for(lang, slug)}"
+
+
 def head(lang: str, slug: str, title: str, description: str) -> str:
     site = SITE[lang]
     other = other_lang(lang)
-    self_url = url_for(lang, slug)
-    alt_url = url_for(other, slug)
+    self_url = canonical_url_for(lang, slug)
+    alt_url = canonical_url_for(other, slug)
     font_family = "IBM+Plex+Sans+Arabic:wght@400;500;600;700" if lang == "ar" else "Inter:wght@400;500;600;700;800"
     return f"""<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,7 +37,7 @@ def head(lang: str, slug: str, title: str, description: str) -> str:
 <link rel="canonical" href="{self_url}">
 <link rel="alternate" hreflang="{lang}" href="{self_url}">
 <link rel="alternate" hreflang="{other}" href="{alt_url}">
-<link rel="alternate" hreflang="x-default" href="{url_for('en', slug)}">
+<link rel="alternate" hreflang="x-default" href="{canonical_url_for('en', slug)}">
 <meta property="og:type" content="website">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{description}">
