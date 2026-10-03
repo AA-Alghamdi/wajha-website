@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WAJHA | وجهة</title>
+<meta name="robots" content="noindex">
+<script>
+(function () {
+  var lang = (navigator.language || navigator.userLanguage || "en").toLowerCase();
+  var target = lang.indexOf("ar") === 0 ? "/ar/index.html" : "/en/index.html";
+  window.location.replace(target);
+})();
+</script>
+<style>
+  body { font-family: system-ui, sans-serif; background: #0A1930; color: #fff; display: flex;
+         align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+  .choice { text-align: center; }
+  .choice a { color: #FFB703; font-size: 1.25rem; margin: 0 1rem; text-decoration: none; font-weight: 600; }
+  .choice a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+  <noscript>
+    <div class="choice">
+      <p>WAJHA: Advanced Drone Cleaning Solutions</p>
+      <a href="/ar/index.html">العربية</a>
+      <a href="/en/index.html">English</a>
+    </div>
+  </noscript>
+</body>
+</html>
