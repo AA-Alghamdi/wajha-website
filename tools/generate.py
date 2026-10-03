@@ -5,6 +5,7 @@ modules in this directory. Stdlib only, run with any python3.
 Usage: python3 tools/generate.py
 """
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -18,8 +19,35 @@ import pages  # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LANGS = ("en", "ar")
 
+# Every internal link/asset reference is authored as a root-absolute path
+# (e.g. "/en/about.html", "/assets/css/style.css") because that's what the
+# templates in layout.py/pages.py/photos.py produce. That only works if the
+# site is served from its host's true root. To stay portable across hosts
+# that serve from a subpath (a GitHub Pages project site at
+# "/wajha-website/", for instance) as well as any future custom domain at
+# true root, every written file is rewritten here into relative paths based
+# on its own depth below the site root — a single, exhaustive fix point
+# instead of threading "current page depth" through every template
+# function. Matches any double-quoted string starting with /en/, /ar/, or
+# /assets/, wherever it appears (href=, src=, or inside the root redirect's
+# inline JS) — external absolute URLs (https://fonts.googleapis.com/...)
+# and non-path schemes (tel:, mailto:) never start with "/", so they're
+# never touched.
+INTERNAL_PATH_RE = re.compile(r'"(/(?:en|ar|assets)/[^"]*)"')
+
+
+def relativize(content: str, depth: int) -> str:
+    prefix = "../" * depth
+
+    def repl(match: "re.Match[str]") -> str:
+        return f'"{prefix}{match.group(1)[1:]}"'
+
+    return INTERNAL_PATH_RE.sub(repl, content)
+
 
 def write(path: str, content: str) -> None:
+    depth = path.count("/")
+    content = relativize(content, depth)
     full = os.path.join(ROOT, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
     with open(full, "w", encoding="utf-8") as f:
